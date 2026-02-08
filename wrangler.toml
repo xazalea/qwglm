@@ -1,6 +1,7 @@
+# Cloudflare Pages Configuration
 name = "qwglm"
 compatibility_date = "2024-01-01"
 pages_build_output_dir = "out"
 
-[env.production]
-compatibility_date = "2024-01-01"
+# Note: For Cloudflare Pages, deploy via the dashboard or use:
+# npx wrangler pages deploy out --project-name=qwglm

@@ -86,11 +86,24 @@ Models are automatically loaded from Hugging Face on first run. You can configur
 
 ## Deployment
 
-This project is configured for Cloudflare Pages deployment:
+**Via Cloudflare Pages Dashboard (Recommended):**
+1. Push code to GitHub
+2. Connect repository to Cloudflare Pages
+3. Configure build settings:
+   - Build command: `npm run build`
+   - Output directory: `out`
+   - Node version: `22.16.0`
+4. Deploy automatically on every push
 
-1. Build: `npm run build`
-2. Deploy the `out/` directory to Cloudflare Pages
-3. Models will be loaded from Hugging Face at runtime
+**Via CLI:**
+```bash
+npm run build
+npx wrangler pages deploy out --project-name=qwglm
+```
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed instructions.
+
+Models are loaded from Hugging Face at runtime (no large files in deployment).
 
 ## Browser Requirements
 

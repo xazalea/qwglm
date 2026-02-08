@@ -46,7 +46,7 @@ export async function loadPiperModel(config: PiperModelConfig): Promise<{
   }
 
   const model = await modelResponse.arrayBuffer();
-  const config = configResponse.ok ? await configResponse.json() : {};
+  const modelConfig = configResponse.ok ? await configResponse.json() : {};
 
-  return { model, config };
+  return { model, config: modelConfig };
 }
