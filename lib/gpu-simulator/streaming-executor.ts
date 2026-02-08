@@ -168,7 +168,7 @@ export class StreamingExecutor {
   /**
    * Prefetch data for next operations
    */
-  private async prefetchNext(operation: () => Promise<void>): void {
+  private async prefetchNext(operation: () => Promise<void>): Promise<void> {
     if (!this.config.enablePrefetch) {
       return;
     }

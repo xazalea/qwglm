@@ -137,7 +137,7 @@ export function dequantize(
     case 'fp16':
       return dequantizeFP16(quantized.data as Uint16Array, quantized.shape);
     case 'fp32':
-      return new Float32Array(quantized.data as ArrayBuffer);
+      return new Float32Array(quantized.data as unknown as ArrayBuffer);
     default:
       throw new Error(`Unsupported quantization type: ${quantized.dtype}`);
   }

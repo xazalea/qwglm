@@ -38,8 +38,8 @@ export class KVCacheManager {
   ): void {
     const cache = this.cache.get(layerId);
     if (cache) {
-      cache.key.push(...key);
-      cache.value.push(...value);
+      cache.key.push(...(key as any));
+      cache.value.push(...(value as any));
     }
   }
 

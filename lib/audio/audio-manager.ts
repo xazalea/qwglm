@@ -106,6 +106,10 @@ export class AudioManager {
       if (!started) return false;
     }
 
+    if (!this.mediaStream) {
+      return false;
+    }
+
     try {
       this.mediaRecorder = new MediaRecorder(this.mediaStream);
       this.isRecording = true;

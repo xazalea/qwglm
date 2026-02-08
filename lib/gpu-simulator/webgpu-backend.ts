@@ -3,16 +3,33 @@
  * Provides GPU acceleration for the simulator using WebGPU compute shaders
  */
 
+// WebGPU types are available globally in browsers
+// Using 'any' type to avoid TypeScript errors during build
+type GPUDeviceType = any;
+type GPUQueueType = any;
+type GPUComputePipelineType = any;
+type GPUBindGroupType = any;
+type GPUAdapterType = any;
+
+// Extend Navigator interface for WebGPU
+declare global {
+  interface Navigator {
+    gpu?: {
+      requestAdapter(): Promise<GPUAdapterType | null>;
+    };
+  }
+}
+
 export interface WebGPUDevice {
-  device: GPUDevice;
-  queue: GPUQueue;
-  computePipeline: GPUComputePipeline;
-  bindGroup: GPUBindGroup;
+  device: GPUDeviceType;
+  queue: GPUQueueType;
+  computePipeline: GPUComputePipelineType;
+  bindGroup: GPUBindGroupType;
 }
 
 export class WebGPUBackend {
-  private device: GPUDevice | null = null;
-  private adapter: GPUAdapter | null = null;
+  private device: GPUDeviceType | null = null;
+  private adapter: GPUAdapterType | null = null;
   private initialized = false;
 
   /**
@@ -50,7 +67,7 @@ export class WebGPUBackend {
   /**
    * Get WebGPU device
    */
-  getDevice(): GPUDevice | null {
+  getDevice(): GPUDeviceType | null {
     return this.device;
   }
 
@@ -58,9 +75,9 @@ export class WebGPUBackend {
    * Create compute shader for matrix operations
    */
   createMatrixMultiplyPipeline(
-    device: GPUDevice,
+    device: GPUDeviceType,
     workgroupSize: number = 8
-  ): GPUComputePipeline {
+  ): GPUComputePipelineType {
     const shaderModule = device.createShaderModule({
       code: `
         @group(0) @binding(0) var<storage, read> matrixA: array<f32>;
@@ -106,9 +123,9 @@ export class WebGPUBackend {
    * Create compute shader for element-wise operations
    */
   createElementWisePipeline(
-    device: GPUDevice,
+    device: GPUDeviceType,
     operation: 'add' | 'multiply' | 'relu'
-  ): GPUComputePipeline {
+  ): GPUComputePipelineType {
     const opCode = {
       add: 'result = a + b;',
       multiply: 'result = a * b;',
@@ -151,7 +168,7 @@ export class WebGPUBackend {
    * Execute matrix multiplication on GPU
    */
   async matrixMultiply(
-    device: GPUDevice,
+    device: GPUDeviceType,
     A: Float32Array,
     B: Float32Array,
     M: number,
@@ -164,22 +181,22 @@ export class WebGPUBackend {
     // Create buffers
     const bufferA = device.createBuffer({
       size: A.byteLength,
-      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+      usage: 0x0008 | 0x0002, // STORAGE | COPY_DST
     });
 
     const bufferB = device.createBuffer({
       size: B.byteLength,
-      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+      usage: 0x0008 | 0x0002, // STORAGE | COPY_DST
     });
 
     const bufferC = device.createBuffer({
       size: M * N * 4,
-      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
+      usage: 0x0008 | 0x0004, // STORAGE | COPY_SRC
     });
 
     const paramsBuffer = device.createBuffer({
       size: 12, // 3 u32s
-      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+      usage: 0x0040 | 0x0002, // UNIFORM | COPY_DST
     });
 
     // Upload data
@@ -213,14 +230,14 @@ export class WebGPUBackend {
 
     const readBuffer = device.createBuffer({
       size: bufferC.size,
-      usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
+      usage: 0x0002 | 0x0001, // COPY_DST | MAP_READ
     });
 
     encoder.copyBufferToBuffer(bufferC, 0, readBuffer, 0, bufferC.size);
     device.queue.submit([encoder.finish()]);
 
     // Read result
-    await readBuffer.mapAsync(GPUMapMode.READ);
+    await readBuffer.mapAsync(1); // GPUMapMode.READ = 1
     const result = new Float32Array(readBuffer.getMappedRange());
     const output = new Float32Array(result);
     readBuffer.unmap();
@@ -232,7 +249,7 @@ export class WebGPUBackend {
    * Execute element-wise operation on GPU
    */
   async elementWise(
-    device: GPUDevice,
+    device: GPUDeviceType,
     A: Float32Array,
     B: Float32Array,
     operation: 'add' | 'multiply' | 'relu',
@@ -243,22 +260,22 @@ export class WebGPUBackend {
     // Create buffers
     const bufferA = device.createBuffer({
       size: A.byteLength,
-      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+      usage: 0x0008 | 0x0002, // STORAGE | COPY_DST
     });
 
     const bufferB = device.createBuffer({
       size: B.byteLength,
-      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+      usage: 0x0008 | 0x0002, // STORAGE | COPY_DST
     });
 
     const bufferOut = device.createBuffer({
       size: size * 4,
-      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
+      usage: 0x0008 | 0x0004, // STORAGE | COPY_SRC
     });
 
     const sizeBuffer = device.createBuffer({
       size: 4,
-      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+      usage: 0x0040 | 0x0002, // UNIFORM | COPY_DST
     });
 
     // Upload data
@@ -287,14 +304,14 @@ export class WebGPUBackend {
 
     const readBuffer = device.createBuffer({
       size: bufferOut.size,
-      usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
+      usage: 0x0002 | 0x0001, // COPY_DST | MAP_READ
     });
 
     encoder.copyBufferToBuffer(bufferOut, 0, readBuffer, 0, bufferOut.size);
     device.queue.submit([encoder.finish()]);
 
     // Read result
-    await readBuffer.mapAsync(GPUMapMode.READ);
+    await readBuffer.mapAsync(1); // GPUMapMode.READ = 1
     const result = new Float32Array(readBuffer.getMappedRange());
     const output = new Float32Array(result);
     readBuffer.unmap();

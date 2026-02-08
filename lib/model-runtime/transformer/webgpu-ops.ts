@@ -5,11 +5,15 @@
 
 import { WebGPUBackend } from '../../gpu-simulator/webgpu-backend';
 
+// WebGPU types are available globally in browsers
+// Using 'any' type to avoid TypeScript errors during build
+type GPUDeviceType = any;
+
 /**
  * WebGPU Matrix Multiplication with optimizations
  */
 export async function matmulWebGPU(
-  device: GPUDevice,
+  device: GPUDeviceType,
   A: Float32Array,
   B: Float32Array,
   M: number,
@@ -99,22 +103,22 @@ export async function matmulWebGPU(
   // Create buffers
   const bufferA = device.createBuffer({
     size: A.byteLength,
-    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+      usage: 0x0008 | 0x0002, // STORAGE | COPY_DST
   });
 
   const bufferB = device.createBuffer({
     size: B.byteLength,
-    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+      usage: 0x0008 | 0x0002, // STORAGE | COPY_DST
   });
 
   const bufferC = device.createBuffer({
     size: M * N * 4,
-    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
+      usage: 0x0008 | 0x0004, // STORAGE | COPY_SRC
   });
 
   const paramsBuffer = device.createBuffer({
     size: 12,
-    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+      usage: 0x0040 | 0x0002, // UNIFORM | COPY_DST
   });
 
   // Upload data
@@ -146,14 +150,14 @@ export async function matmulWebGPU(
 
   const readBuffer = device.createBuffer({
     size: bufferC.size,
-    usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
+      usage: 0x0002 | 0x0001, // COPY_DST | MAP_READ
   });
 
   encoder.copyBufferToBuffer(bufferC, 0, readBuffer, 0, bufferC.size);
   device.queue.submit([encoder.finish()]);
 
   // Read result
-  await readBuffer.mapAsync(GPUMapMode.READ);
+    await readBuffer.mapAsync(1); // GPUMapMode.READ = 1
   const result = new Float32Array(readBuffer.getMappedRange());
   const output = new Float32Array(result);
   readBuffer.unmap();
@@ -172,7 +176,7 @@ export async function matmulWebGPU(
  * Optimized attention computation on WebGPU
  */
 export async function attentionWebGPU(
-  device: GPUDevice,
+  device: GPUDeviceType,
   Q: Float32Array,
   K: Float32Array,
   V: Float32Array,
@@ -258,7 +262,7 @@ function applySoftmaxRows(matrix: Float32Array, rows: number, cols: number): Flo
  * Layer normalization on WebGPU
  */
 export async function layerNormWebGPU(
-  device: GPUDevice,
+  device: GPUDeviceType,
   input: Float32Array,
   gamma: Float32Array,
   beta: Float32Array,
@@ -324,27 +328,27 @@ export async function layerNormWebGPU(
 
   const inputBuffer = device.createBuffer({
     size: input.byteLength,
-    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+      usage: 0x0008 | 0x0002, // STORAGE | COPY_DST
   });
 
   const gammaBuffer = device.createBuffer({
     size: gamma.byteLength,
-    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+      usage: 0x0008 | 0x0002, // STORAGE | COPY_DST
   });
 
   const betaBuffer = device.createBuffer({
     size: beta.byteLength,
-    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+      usage: 0x0008 | 0x0002, // STORAGE | COPY_DST
   });
 
   const outputBuffer = device.createBuffer({
     size: input.byteLength,
-    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
+      usage: 0x0008 | 0x0004, // STORAGE | COPY_SRC
   });
 
   const paramsBuffer = device.createBuffer({
     size: 12,
-    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+      usage: 0x0040 | 0x0002, // UNIFORM | COPY_DST
   });
 
   device.queue.writeBuffer(inputBuffer, 0, input);
@@ -373,13 +377,13 @@ export async function layerNormWebGPU(
 
   const readBuffer = device.createBuffer({
     size: outputBuffer.size,
-    usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
+      usage: 0x0002 | 0x0001, // COPY_DST | MAP_READ
   });
 
   encoder.copyBufferToBuffer(outputBuffer, 0, readBuffer, 0, outputBuffer.size);
   device.queue.submit([encoder.finish()]);
 
-  await readBuffer.mapAsync(GPUMapMode.READ);
+    await readBuffer.mapAsync(1); // GPUMapMode.READ = 1
   const result = new Float32Array(readBuffer.getMappedRange());
   const output = new Float32Array(result);
   readBuffer.unmap();

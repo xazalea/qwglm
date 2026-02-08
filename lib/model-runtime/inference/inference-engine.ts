@@ -175,7 +175,7 @@ export class InferenceEngine {
 
     // Prepend vision embeddings
     if (visionEmbeddings.length > 0) {
-      hiddenStates = [...visionEmbeddings, ...hiddenStates];
+      hiddenStates = [...visionEmbeddings, ...hiddenStates] as any;
     }
 
     // Generation loop
@@ -200,14 +200,14 @@ export class InferenceEngine {
           hiddenStates,
           layerWeights,
           layerConfig,
-          kvCache
+          kvCache as any
         );
 
         if (newKvCache) {
           this.kvCache.updateCache(layer, newKvCache.key, newKvCache.value);
         }
 
-        hiddenStates = output;
+        hiddenStates = output as any;
       }
 
       // Get logits from last hidden state

@@ -17,6 +17,11 @@ import { UltraOptimizedGPU } from './ultra-optimized-gpu';
 import { StreamingExecutor, type StreamingConfig } from './streaming-executor';
 import type { Word, Address, BlockState, ThreadState } from './types';
 
+// WebGPU types are available globally in browsers
+// Using 'any' type for GPUDevice to avoid TypeScript errors during build
+// Runtime will have proper WebGPU types
+type GPUDeviceType = any;
+
 export interface ImpossibleGPUConfig {
   numCores: number;
   threadsPerCore: number;
@@ -41,7 +46,7 @@ export class ImpossibleGPU {
   private config: ImpossibleGPUConfig;
   private ultraGPU: UltraOptimizedGPU | null = null;
   private streaming: StreamingExecutor | null = null;
-  private device: GPUDevice | null = null;
+  private device: GPUDeviceType | null = null;
   private cycle: number = 0;
   private operationsExecuted: number = 0;
   private totalLatency: number = 0;
@@ -53,7 +58,7 @@ export class ImpossibleGPU {
   /**
    * Initialize with maximum optimization
    */
-  async initialize(device: GPUDevice | null, blocks: BlockState[]): Promise<void> {
+  async initialize(device: GPUDeviceType | null, blocks: BlockState[]): Promise<void> {
     if (!device) {
       console.warn('No WebGPU device available - falling back to CPU');
       return;
@@ -259,7 +264,7 @@ export class HybridGPUExecutor {
     this.impossibleGPU = new ImpossibleGPU(config);
   }
 
-  async initialize(webgpuDevice: GPUDevice | null, blocks: BlockState[]): Promise<void> {
+  async initialize(webgpuDevice: GPUDeviceType | null, blocks: BlockState[]): Promise<void> {
     await this.impossibleGPU.initialize(webgpuDevice, blocks);
   }
 

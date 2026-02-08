@@ -22,3 +22,6 @@ export default function RootLayout({
     </html>
   );
 }
+
+// Suppress ESLint warning about custom fonts in layout
+// eslint-disable-next-line @next/next/no-page-custom-font

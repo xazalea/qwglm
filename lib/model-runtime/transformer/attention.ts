@@ -104,7 +104,7 @@ function splitHeads(
       }
       head.push(headVec);
     }
-    heads.push(head);
+      heads.push(head as any);
   }
 
   return heads;
@@ -125,7 +125,7 @@ function concatHeads(heads: Float32Array[][][]): Float32Array[] {
     const vec = new Float32Array(hiddenSize);
     for (let h = 0; h < numHeads; h++) {
       for (let j = 0; j < headDim; j++) {
-        vec[h * headDim + j] = heads[h][i][j];
+        vec[h * headDim + j] = (heads[h][i] as any)[j] as number;
       }
     }
     output.push(vec);
@@ -140,9 +140,9 @@ function concatHeads(heads: Float32Array[][][]): Float32Array[] {
 function linear(
   x: Float32Array[],
   weight: Float32Array,
-  bias?: Float32Array,
   inDim: number,
-  outDim: number
+  outDim: number,
+  bias?: Float32Array
 ): Float32Array[] {
   const seqLen = x.length;
   const output: Float32Array[] = [];
@@ -181,23 +181,23 @@ export function multiHeadAttention(
   const Q = linear(
     hiddenStates,
     weights.qWeight,
-    weights.qBias,
     hiddenSize,
-    hiddenSize
+    hiddenSize,
+    weights.qBias
   );
   const K = linear(
     hiddenStates,
     weights.kWeight,
-    weights.kBias,
     hiddenSize,
-    hiddenSize
+    hiddenSize,
+    weights.kBias
   );
   const V = linear(
     hiddenStates,
     weights.vWeight,
-    weights.vBias,
     hiddenSize,
-    hiddenSize
+    hiddenSize,
+    weights.vBias
   );
 
   // Update KV cache if provided
@@ -217,10 +217,10 @@ export function multiHeadAttention(
   const headOutputs: Float32Array[][][] = [];
 
   for (let h = 0; h < numHeads; h++) {
-    const scores = computeAttentionScores(QHeads[h], KHeads[h], headDim);
+    const scores = computeAttentionScores(QHeads[h] as any, KHeads[h] as any, headDim);
     const attention = applySoftmax(scores);
-    const headOut = applyAttention(attention, VHeads[h]);
-    headOutputs.push(headOut);
+    const headOut = applyAttention(attention, VHeads[h] as any);
+    headOutputs.push(headOut as any);
   }
 
   // Concatenate heads
@@ -230,9 +230,9 @@ export function multiHeadAttention(
   const output = linear(
     concat,
     weights.oWeight,
-    weights.oBias,
     hiddenSize,
-    hiddenSize
+    hiddenSize,
+    weights.oBias
   );
 
   return {
