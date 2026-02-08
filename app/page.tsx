@@ -242,7 +242,7 @@ export default function Home() {
     }
   }, [audioManager]);
 
-  const handleStartCapture = useCallback(async () => {
+  const handleStartCapture = useCallback(async (): Promise<boolean> => {
     if (screenCapture) {
       const success = await screenCapture.startCapture({
         video: true,
@@ -265,7 +265,10 @@ export default function Home() {
           return null;
         });
       }
+      
+      return success;
     }
+    return false;
   }, [screenCapture]);
 
   const handleStopCapture = useCallback(() => {
