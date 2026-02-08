@@ -1,5 +1,7 @@
 # Cloudflare Pages Deployment Guide
 
+**Repository**: [https://github.com/xazalea/qwglm](https://github.com/xazalea/qwglm)
+
 ## Prerequisites
 - Cloudflare account
 - GitHub repository connected to Cloudflare Pages
@@ -11,7 +13,7 @@
 
 1. Go to [Cloudflare Pages Dashboard](https://dash.cloudflare.com/?to=/:account/pages)
 2. Click "Create a project" → "Connect to Git"
-3. Select your repository (e.g., `xazalea/qwglm`)
+3. Select the repository: [`xazalea/qwglm`](https://github.com/xazalea/qwglm)
 4. Configure the build settings:
 
 ```

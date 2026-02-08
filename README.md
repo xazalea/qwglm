@@ -1,5 +1,10 @@
 # QWGLM - High-Performance Browser AI
 
+[![GitHub](https://img.shields.io/badge/GitHub-xazalea%2Fqwglm-blue?logo=github)](https://github.com/xazalea/qwglm)
+[![License](https://img.shields.io/badge/license-MIT-green)](https://github.com/xazalea/qwglm/blob/main/LICENSE)
+
+> **Repository**: [https://github.com/xazalea/qwglm](https://github.com/xazalea/qwglm)
+
 A Next.js website that runs an 8B AI model in the browser using WebGPU acceleration, with screen sharing and voice interaction capabilities.
 
 ## Features
@@ -111,6 +116,34 @@ Models are loaded from Hugging Face at runtime (no large files in deployment).
 - **Screen Capture API** (Chrome/Edge)
 - **MediaDevices API** (for microphone)
 
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository: [https://github.com/xazalea/qwglm](https://github.com/xazalea/qwglm)
+2. Create your feature branch: `git checkout -b feature/AmazingFeature`
+3. Commit your changes: `git commit -m 'Add some AmazingFeature'`
+4. Push to the branch: `git push origin feature/AmazingFeature`
+5. Open a Pull Request
+
+## Issues
+
+Found a bug or have a feature request? Please open an issue:
+[https://github.com/xazalea/qwglm/issues](https://github.com/xazalea/qwglm/issues)
+
 ## License
 
-MIT
+MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Links
+
+- **Repository**: [https://github.com/xazalea/qwglm](https://github.com/xazalea/qwglm)
+- **Issues**: [https://github.com/xazalea/qwglm/issues](https://github.com/xazalea/qwglm/issues)
+- **Cloudflare Pages**: [Deploy your own](https://pages.cloudflare.com/)
+
+## Acknowledgments
+
+- [Qwen3-VL Model](https://huggingface.co/DavidAU/Qwen3-VL-8B-GLM-4.7-Flash-Heretic-Uncensored-Thinking) by DavidAU
+- [Piper TTS](https://github.com/rhasspy/piper) by Rhasspy
+- [NVIDIA Parakeet](https://huggingface.co/nvidia/parakeet-tdt-0.6b-v2) by NVIDIA
+- [tiny-gpu](https://github.com/adam-maj/tiny-gpu) inspiration by adam-maj

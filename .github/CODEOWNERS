@@ -1,0 +1,12 @@
+# Code owners for QWGLM repository
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owner for everything in the repo
+* @xazalea
+
+# GPU simulator and model runtime
+/lib/gpu-simulator/ @xazalea
+/lib/model-runtime/ @xazalea
+
+# Documentation
+*.md @xazalea

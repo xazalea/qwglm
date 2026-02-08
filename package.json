@@ -2,6 +2,14 @@
   "name": "qwglm",
   "version": "0.1.0",
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/xazalea/qwglm.git"
+  },
+  "bugs": {
+    "url": "https://github.com/xazalea/qwglm/issues"
+  },
+  "homepage": "https://github.com/xazalea/qwglm#readme",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
