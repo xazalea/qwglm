@@ -21,7 +21,10 @@ Framework preset: Next.js (Static HTML Export)
 Build command: npm run build
 Build output directory: out
 Root directory: /
+Deploy command: (leave EMPTY - Cloudflare Pages auto-deploys)
 ```
+
+**⚠️ IMPORTANT:** Do NOT set a deploy command. Cloudflare Pages automatically deploys the build output. If you see an error about `wrangler deploy`, remove the deploy command from Settings → Builds & deployments.
 
 5. Environment variables (if needed):
 ```
