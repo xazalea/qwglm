@@ -6,12 +6,27 @@ import VoiceInterface from '@/components/VoiceInterface';
 import ScreenShare from '@/components/ScreenShare';
 import GPUStatus from '@/components/GPUStatus';
 import LoadingProgress from '@/components/LoadingProgress';
+import TrainingStatus from '@/components/TrainingStatus';
+import ImportInterface, { type ImportResult } from '@/components/ImportInterface';
 import { AudioManager, type AudioManagerConfig } from '@/lib/audio/audio-manager';
 import { ScreenCaptureManager, processFrameForVision } from '@/lib/screen-capture/screen-capture';
 import { InferenceEngine, type InferenceConfig, type GenerationConfig } from '@/lib/model-runtime/inference/inference-engine';
 import { WebGPUBackend } from '@/lib/gpu-simulator/webgpu-backend';
 import { HybridGPUExecutor, type ImpossibleGPUConfig } from '@/lib/gpu-simulator/impossible-gpu';
 import type { ModelWeights } from '@/lib/model-runtime/quantization/loader';
+import { 
+  DataCollector, 
+  TrainingQueue, 
+  TrainingEngine, 
+  TrainingScheduler, 
+  BatchManager,
+  WeightUpdater,
+  WebsiteImporter,
+  ImageImporter,
+  TextImporter,
+  type TrainingConfig,
+  type TrainingMetrics,
+} from '@/lib/finetuning';
 
 export default function Home() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -39,6 +54,17 @@ export default function Home() {
   const [webgpu, setWebgpu] = useState<WebGPUBackend | null>(null);
   const [hybridGPU, setHybridGPU] = useState<HybridGPUExecutor | null>(null);
   const [backendUsage, setBackendUsage] = useState<{ webgpu: number; impossible: number }>({ webgpu: 0, impossible: 0 });
+
+  // Fine-tuning system state
+  const [dataCollector, setDataCollector] = useState<DataCollector | null>(null);
+  const [trainingScheduler, setTrainingScheduler] = useState<TrainingScheduler | null>(null);
+  const [websiteImporter, setWebsiteImporter] = useState<WebsiteImporter | null>(null);
+  const [imageImporter, setImageImporter] = useState<ImageImporter | null>(null);
+  const [textImporter, setTextImporter] = useState<TextImporter | null>(null);
+  const [trainingMetrics, setTrainingMetrics] = useState<TrainingMetrics | undefined>(undefined);
+  const [trainingQueueSize, setTrainingQueueSize] = useState(0);
+  const [isTrainingActive, setIsTrainingActive] = useState(false);
+  const [fastLearningStats, setFastLearningStats] = useState<any>(undefined);
 
   // Initialize components
   useEffect(() => {
@@ -179,6 +205,16 @@ export default function Home() {
       setMessages((prev: Message[]) => [...prev, userMessage]);
       setIsLoading(true);
 
+      // Log message to data collector
+      if (dataCollector) {
+        dataCollector.logMessage(userMessage);
+      }
+
+      // Notify scheduler that inference is in progress
+      if (trainingScheduler) {
+        trainingScheduler.setInferenceInProgress(true);
+      }
+
       try {
         // Process with inference engine
         if (inferenceEngine) {
@@ -203,6 +239,11 @@ export default function Home() {
 
           setMessages((prev: Message[]) => [...prev, assistantMessage]);
 
+          // Log assistant response to data collector
+          if (dataCollector) {
+            dataCollector.logMessage(assistantMessage);
+          }
+
           // Speak response
           if (audioManager) {
             setIsSpeaking(true);
@@ -221,9 +262,14 @@ export default function Home() {
         setMessages((prev: Message[]) => [...prev, errorMessage]);
       } finally {
         setIsLoading(false);
+        
+        // Notify scheduler that inference is complete
+        if (trainingScheduler) {
+          trainingScheduler.setInferenceInProgress(false);
+        }
       }
     },
-    [inferenceEngine, audioManager]
+    [inferenceEngine, audioManager, dataCollector, trainingScheduler]
   );
 
   const handleStartRecording = useCallback(async () => {
@@ -278,6 +324,84 @@ export default function Home() {
     }
   }, [screenCapture]);
 
+  // Import handlers
+  const handleImportWebsite = useCallback(async (url: string): Promise<ImportResult> => {
+    if (!websiteImporter) {
+      return {
+        type: 'website',
+        success: false,
+        id: url,
+        examplesGenerated: 0,
+        error: 'Importer not initialized',
+      };
+    }
+
+    const result = await websiteImporter.importWebsite(url);
+    return {
+      type: 'website',
+      success: result.success,
+      id: result.url,
+      examplesGenerated: result.examplesGenerated,
+      error: result.error,
+    };
+  }, [websiteImporter]);
+
+  const handleImportImage = useCallback(async (file: File): Promise<ImportResult> => {
+    if (!imageImporter) {
+      return {
+        type: 'image',
+        success: false,
+        id: file.name,
+        examplesGenerated: 0,
+        error: 'Importer not initialized',
+      };
+    }
+
+    const result = await imageImporter.importImageFile(file);
+    return {
+      type: 'image',
+      success: result.success,
+      id: result.imageId,
+      examplesGenerated: result.examplesGenerated,
+      error: result.error,
+    };
+  }, [imageImporter]);
+
+  const handleImportText = useCallback(async (
+    text: string,
+    format: 'plain' | 'markdown' | 'json'
+  ): Promise<ImportResult> => {
+    if (!textImporter) {
+      return {
+        type: 'text',
+        success: false,
+        id: 'text',
+        examplesGenerated: 0,
+        error: 'Importer not initialized',
+      };
+    }
+
+    const result = textImporter.importText(text, format);
+    return {
+      type: 'text',
+      success: result.success,
+      id: result.textId,
+      examplesGenerated: result.examplesGenerated,
+      error: result.error,
+    };
+  }, [textImporter]);
+
+  const handleToggleTraining = useCallback(() => {
+    if (!trainingScheduler) return;
+
+    const stats = trainingScheduler.getStats();
+    if (stats.isScheduled) {
+      trainingScheduler.stop();
+    } else {
+      trainingScheduler.start();
+    }
+  }, [trainingScheduler]);
+
   return (
     <main className="min-h-screen bg-black text-neutral-200">
       <div className="max-w-7xl mx-auto px-6 py-12">
@@ -322,6 +446,22 @@ export default function Home() {
 
           {/* Sidebar */}
           <div className="space-y-4">
+            {/* Training Status */}
+            <TrainingStatus
+              isTraining={isTrainingActive}
+              metrics={trainingMetrics}
+              queueSize={trainingQueueSize}
+              onToggleTraining={handleToggleTraining}
+              fastLearningStats={fastLearningStats}
+            />
+
+            {/* Import Interface */}
+            <ImportInterface
+              onImportWebsite={handleImportWebsite}
+              onImportImage={handleImportImage}
+              onImportText={handleImportText}
+            />
+
             <GPUStatus
               cycle={gpuStats.cycle}
               activeThreads={gpuStats.activeThreads}
